@@ -1,15 +1,15 @@
-# CREATE TABLE citizen (
-#     citizen_id INT AUTO_INCREMENT PRIMARY KEY,
-#     nama VARCHAR(100) NOT NULL,
-#     email VARCHAR(100) NOT NULL UNIQUE,
-#     password VARCHAR(255) NOT NULL,
-#     alamat VARCHAR(255) NOT NULL,
-#     no_telepon VARCHAR(20),
-#     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-#     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-#     deleted_at DATETIME DEFAULT NULL,
-#     is_deleted BOOLEAN DEFAULT FALSE
-# );
+CREATE TABLE citizen (
+    citizen_id INT AUTO_INCREMENT PRIMARY KEY,
+    nama VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    alamat VARCHAR(255) NOT NULL,
+    no_telepon VARCHAR(20),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME DEFAULT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE
+);
 
 CREATE TABLE agency (
     agency_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -144,7 +144,20 @@ CREATE TABLE complaint_comment (
 
 CREATE TABLE log_activity (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
-    log_description TEXT
+    citizen_id INT NULL,
+    officer_id INT NULL,
+    admin_id INT NULL,
+    aktivitas VARCHAR(255) NOT NULL,
+    deskripsi TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT ck_only_one_actor CHECK (
+        (citizen_id IS NOT NULL AND officer_id IS NULL AND admin_id IS NULL) OR
+        (citizen_id IS NULL AND officer_id IS NOT NULL AND admin_id IS NULL) OR
+        (citizen_id IS NULL AND officer_id IS NULL AND admin_id IS NOT NULL)
+    ),
+    CONSTRAINT fk_log_citizen FOREIGN KEY (citizen_id) REFERENCES citizen(citizen_id),
+    CONSTRAINT fk_log_officer FOREIGN KEY (officer_id) REFERENCES agency_officer(officer_id),
+    CONSTRAINT fk_log_admin FOREIGN KEY (admin_id) REFERENCES admin(admin_id)
 );
 
 INSERT INTO citizen (nama, email, password, alamat, no_telepon) VALUES
@@ -280,3 +293,19 @@ VALUES
 (8, NULL, 4, 'Akan kami tindaklanjuti segera.'),
 (9, 5, NULL, 'Saya ingin laporan ini diproses lebih cepat.'),
 (10, NULL, 5, 'Silakan lampirkan bukti tambahan jika ada.');
+
+
+INSERT INTO log_activity (citizen_id, officer_id, admin_id, aktivitas, deskripsi)
+VALUES
+(1, NULL, NULL, 'Login', 'Warga melakukan login ke sistem'),
+(2, NULL, NULL, 'Mengajukan Aduan', 'Warga mengajukan aduan tentang jalan berlubang di Jalan Merdeka'),
+(3, NULL, NULL, 'Mengedit Profil', 'Warga memperbarui informasi nomor telepon'),
+(NULL, 1, NULL, 'Menanggapi Aduan', 'Petugas memberikan respon pada aduan #5'),
+(NULL, 2, NULL, 'Login', 'Petugas berhasil login ke dashboard instansi'),
+(NULL, 3, NULL, 'Memperbarui Status Aduan', 'Petugas mengubah status aduan #7 menjadi "diproses"'),
+(NULL, NULL, 1, 'Login', 'Admin melakukan login ke sistem'),
+(NULL, NULL, 2, 'Menambahkan Kategori', 'Admin menambahkan kategori baru: "Lingkungan"'),
+(NULL, NULL, 3, 'Menghapus Komentar', 'Admin menghapus komentar pada aduan #9 karena mengandung SARA'),
+(NULL, NULL, 1, 'Menonaktifkan Akun Citizen', 'Admin menonaktifkan akun milik citizen_id #4 karena pelanggaran aturan');
+
+
