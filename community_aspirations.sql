@@ -309,3 +309,4 @@ VALUES
 (NULL, NULL, 1, 'Menonaktifkan Akun Citizen', 'Admin menonaktifkan akun milik citizen_id #4 karena pelanggaran aturan');
 
 
+
