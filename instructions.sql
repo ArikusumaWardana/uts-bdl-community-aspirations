@@ -183,7 +183,7 @@ SELECT * FROM complaint;
 
 
 -- Procedure 2 --
-DELIMITER $$
+DELIMITER ||
 
 CREATE PROCEDURE respond_to_complaint (
     IN p_complaint_id INT,
@@ -191,25 +191,16 @@ CREATE PROCEDURE respond_to_complaint (
     IN p_deskripsi TEXT
 )
 BEGIN
-    DECLARE complaint_status ENUM('diajukan', 'diproses', 'selesai');
+    DECLARE complaint_status ENUM('diajukan', 'diproses', 'selesai') DEFAULT NULL;
 
-    -- Ambil status dari pengaduan
+
     SELECT status INTO complaint_status
     FROM complaint
     WHERE complaint_id = p_complaint_id AND is_deleted = FALSE;
 
-    -- Jika pengaduan tidak ditemukan
-    IF complaint_status IS NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Pengaduan tidak ditemukan atau telah dihapus.';
+    IF complaint_status IS NOT NULL AND complaint_status != 'selesai' THEN
 
-    -- Jika status sudah selesai, tidak boleh merespon lagi
-    ELSEIF complaint_status = 'selesai' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Pengaduan sudah selesai, tidak bisa diberikan respon lagi.';
-
-    -- Jika status valid, maka bisa melakukan insert
-    ELSE
+        -- Tambahkan respon
         INSERT INTO response (
             complaint_id,
             officer_id,
@@ -228,7 +219,6 @@ BEGIN
             FALSE
         );
 
-        -- Jika status masih berstatus diajukan, maka ubah status menjadi diproses
         IF complaint_status = 'diajukan' THEN
             UPDATE complaint
             SET status = 'diproses',
@@ -237,9 +227,10 @@ BEGIN
         END IF;
 
     END IF;
-END $$
+END ||
 
 DELIMITER ;
+
 
 -- Call Procedure 2 --
 CALL respond_to_complaint(
