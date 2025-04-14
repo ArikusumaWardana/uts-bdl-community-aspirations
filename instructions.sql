@@ -91,7 +91,42 @@ SELECT * FROM view_citizen_complaints;
 
 
 -- View 2 --
+CREATE VIEW view_unread_notifications_citizen AS
+SELECT
+    n.notification_id,
+    n.citizen_id,
+    ct.nama AS citizen_name,
+    n.complaint_id,
+    c.judul AS complaint_title,
+    n.pesan,
+    n.created_at
+FROM notification n
+JOIN citizen ct ON n.citizen_id = ct.citizen_id
+JOIN complaint c ON n.complaint_id = c.complaint_id
+WHERE n.status_dibaca = FALSE AND n.is_deleted = FALSE;
 
+-- Use View 2 --
+SELECT * FROM view_unread_notifications_citizen;
+
+
+-- View 3 --
+CREATE VIEW view_complaint_with_responses AS
+SELECT
+    c.complaint_id,
+    c.judul,
+    c.deskripsi AS complaint_description,
+    c.status,
+    r.response_id,
+    r.deskripsi AS response_description,
+    o.nama AS officer_name,
+    r.created_at AS response_created_at
+FROM complaint c
+LEFT JOIN response r ON c.complaint_id = r.complaint_id
+LEFT JOIN agency_officer o ON r.officer_id = o.officer_id
+WHERE c.is_deleted = FALSE;
+
+-- Use View 3 --
+SELECT * FROM view_complaint_with_responses;
 
 
 
