@@ -283,9 +283,148 @@ END ||
 
 DELIMITER ;
 
-
-
 -- Call Procedure 3 --
 CALL soft_delete_complaint(11);
 
-SELECT * FROM complaint;
+
+
+-- TRIGGER --
+
+-- Trigger 1 --
+DELIMITER ||
+
+CREATE TRIGGER trg_log_add_complaint
+AFTER INSERT ON complaint
+FOR EACH ROW
+BEGIN
+  INSERT INTO log_activity (
+    citizen_id,
+    aktivitas,
+    deskripsi,
+    created_at
+  ) VALUES (
+    NEW.citizen_id,
+    'Tambah Pengaduan',
+    CONCAT('Warga menambahkan pengaduan dengan judul "', NEW.judul, '"'),
+    NOW()
+  );
+END ||
+
+DELIMITER ;
+
+INSERT INTO complaint (
+    citizen_id,
+    agency_id,
+    category_id,
+    judul,
+    deskripsi,
+    status
+) VALUES (
+    1,
+    1,
+    1,
+    'Lampu Jalan Mati',
+    'Lampu jalan depan rumah mati selama 3 hari.',
+    'diajukan'
+);
+
+-- Trigger 2 --
+DELIMITER ||
+
+CREATE TRIGGER trg_notify_agency_officer
+AFTER INSERT ON complaint
+FOR EACH ROW
+BEGIN
+  DECLARE officerId INT;
+
+  SELECT officer_id INTO officerId
+  FROM agency_officer
+  WHERE agency_id = NEW.agency_id
+  LIMIT 1;
+
+  IF officerId IS NOT NULL THEN
+    INSERT INTO notification (
+      officer_id,
+      complaint_id,
+      pesan,
+      status_dibaca,
+      created_at,
+      updated_at
+    ) VALUES (
+      officerId,
+      NEW.complaint_id,
+      CONCAT('Pengaduan baru dengan judul "', NEW.judul, '" telah diajukan oleh warga.'),
+      FALSE,
+      NOW(),
+      NOW()
+    );
+  END IF;
+END ||
+
+DELIMITER ;
+
+-- Use Trigger 2 --
+INSERT INTO complaint (
+    citizen_id,
+    agency_id,
+    category_id,
+    judul,
+    deskripsi,
+    status
+) VALUES (
+    2,
+    1,
+    1,
+    'Sampah Tidak Diangkut',
+    'Sudah seminggu tidak ada pengangkutan sampah.',
+    'diajukan'
+);
+
+
+-- Trigger 3 --
+DELIMITER ||
+
+CREATE TRIGGER trg_notify_citizen_response
+AFTER INSERT ON response
+FOR EACH ROW
+BEGIN
+  DECLARE citizenId INT;
+  DECLARE judulPengaduan VARCHAR(255);
+
+  SELECT citizen_id, judul INTO citizenId, judulPengaduan
+  FROM complaint
+  WHERE complaint_id = NEW.complaint_id;
+
+  IF citizenId IS NOT NULL THEN
+    INSERT INTO notification (
+      citizen_id,
+      complaint_id,
+      pesan,
+      status_dibaca,
+      created_at,
+      updated_at
+    ) VALUES (
+      citizenId,
+      NEW.complaint_id,
+      CONCAT('Pengaduan Anda dengan judul "', judulPengaduan, '" telah direspon oleh instansi.'),
+      FALSE,
+      NOW(),
+      NOW()
+    );
+  END IF;
+END ||
+
+DELIMITER ;
+
+-- Use Trigger 3 --
+INSERT INTO response (
+    complaint_id,
+    officer_id,
+    deskripsi
+) VALUES (
+    1,
+    1,
+    'Petugas akan datang besok pagi untuk perbaikan.'
+);
+
+
