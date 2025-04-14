@@ -48,6 +48,8 @@ DELIMITER ;
 SELECT count_unread_notifications_by_citizen(1) AS unread_notifications_by_citizen;
 
 
+DELIMITER ||
+
 -- Function 3 --
 CREATE FUNCTION count_unread_notifications_by_officer(officerId INT)
 RETURNS INT
@@ -61,7 +63,9 @@ BEGIN
       AND status_dibaca = FALSE
       AND is_deleted = FALSE;
     RETURN unread_count;
-END;
+END ||
+
+DELIMITER ;
 
 -- Use Function 3 --
 SELECT count_unread_notifications_by_officer(2) AS unread_notifications_by_officer;
